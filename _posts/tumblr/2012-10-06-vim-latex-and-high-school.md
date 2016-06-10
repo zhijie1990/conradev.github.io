@@ -22,29 +22,29 @@ There are many [resources](http://www.tug.org/interest.html#doc) available to th
 
 In writing lab reports for science classes, I have found the packages [`mhchem`](http://ctan.org/pkg/mhchem) and [`siunitx`](http://ctan.org/pkg/siunitx) to be very useful. Both of these are included in the TeX Live and MacTeX distributions. The first package, `mhchem`, makes it very easy to write out chemical formulae. It is extremely comprehensive, and supports all the notation I have needed for AP Chemistry thus far. To write the formula for dichromate, it simplifies
 
-``` latex
-$3\,\mathrm{Cr}_2^{\strut}\mathrm{O}_7^{2-}$
-```
+{% highlight latex linenos %}
+3\,\mathrm{Cr}_2^{\strut}\mathrm{O}_7^{2-}`
+{% endhighlight %}
 
 into
 
-``` latex
+{% highlight latex linenos %}
 \ce{3Cr2O7^2-}
-```
+{% endhighlight %}
 
 to draw
 
-`$$ \ce{3Cr2O7^2-} $$`
+$$ \ce{3Cr2O7^2-} $$
     
 The other package, `siunitx`, allows you to typeset physical quantities with ease. For example, you can express the specific heat capacity of water with
 
-``` latex
+{% highlight latex linenos %}
 \SI{4.18}{\joule\per\gram\per\celsius}
-```
+{% endhighlight %}
 
 to draw
 
-![Example usage of siunitx](/images/siunitx.png)
+$$ \SI{4.18}{\joule\per\gram\per\celsius} $$
 
 `siunitx` supports (almost) every SI unit under the sun.
 
@@ -56,7 +56,7 @@ Writing English essays in LaTeX is very easy to do, thanks to the [`mla-paper`](
 
 and the code:
 
-``` latex
+{% highlight latex linenos %}
 \documentclass[12pt]{article}
 \pagestyle{plain}
 
@@ -71,7 +71,7 @@ One of the great American classics, \emph{The Great Gatsby} by F. Scott Fitzgera
 
 \end{mla}
 \end{document}
-```
+{% endhighlight %}
 
 ### Plotting
 
@@ -81,7 +81,7 @@ In all of my science classes, I have had to plot points on a graph, in one form 
 
 This example has four plots overlaid on top of one another. A scatter plot, the logistic regression, and its first and second derivatives. This example also includes labeled nodes, and a legend. `pgfplots`, like many of the other packages, is extremely comprehensive and extensible. Here is the code:
 
-``` latex
+{% highlight latex linenos %}
 \documentclass[12pt]{article}
 \pagestyle{plain}
 
@@ -136,7 +136,7 @@ Day People
 \end{tikzpicture}
 
 \end{document}
-```
+{% endhighlight %}
 
 ## Conclusion
 

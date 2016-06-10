@@ -12,50 +12,50 @@ To continue from my previous example, the website is deployed in `/srv/www/hello
 
 First, if you have not already done so, install git.
 
-``` bash
+{% highlight bash linenos %}
 sudo apt-get install git
-```
+{% endhighlight %}
 
 Next, put your website under version control with git
 
-``` bash
+{% highlight bash linenos %}
 cd /srv/www/helloworld
 git init
 git add application.py
 git commit -m 'First commit'
-```
+{% endhighlight %}
 
 A gitignore file is also a good idea. For a Flask app, put the following in `.gitignore`
 
-```
+{% highlight bash linenos %}
 env
 *.pyc
-```
+{% endhighlight %}
 
 and to add it to the repository
 
-``` bash
+{% highlight bash linenos %}
 git add .gitignore
 git commit -m 'Added .gitignore file'
-```
+{% endhighlight %}
 
 Now we are going to create a bare 'hub' repository that will act as an intermediary between the active deployment folder and the rest of the world.
 
-``` bash
+{% highlight bash linenos %}
 sudo mkdir -p /srv/git
 sudo chown -R $USER:$GROUP /srv/git
 cd /srv/git
 git clone --bare /srv/www/helloworld
 cd helloworld.git
 git remote rm origin
-```
+{% endhighlight %}
 
 Next, add the hub as a remote for the deployment repository
 
-``` bash
+{% highlight bash linenos %}
 cd /srv/www/helloworld
 git remote add hub /srv/git/helloworld.git
-```
+{% endhighlight %}
 
 ## Add the magic
 
@@ -63,35 +63,35 @@ To automatically update the deployment repository when changes are pushed to the
 
 To begin, add the following to `/srv/git/helloworld.git/hooks/post-update`
 
-``` bash
+{% highlight bash linenos %}
 #!/bin/sh
 echo
 echo "Pulling changes into deployment repository"
 echo
 git --git-dir /srv/www/helloworld/.git --work-tree /srv/www/helloworld pull hub master
-```
+{% endhighlight %}
 
 and make sure that it is executable
 
-``` bash
+{% highlight bash linenos %}
 chmod 755 /srv/git/helloworld.git/hooks/post-update
-```
+{% endhighlight %}
 
 This `post-update` script updates the deployment repository when the hub is updated. Next, we are going to setup the reverse, a hook to update the hub when changes are committed in the deployment directory (this should be rare, but just in case). Add the following to `/srv/www/helloworld/.git/hooks/post-commit`
 
-``` bash
+{% highlight bash linenos %}
 #!/bin/sh
 echo
 echo "Pushing changes to hub"
 echo
 git push hub
-```
+{% endhighlight %}
 
 and add make it executable
 
-``` bash
+{% highlight bash linenos %}
 chmod 755 /srv/www/helloworld/.git/hooks/post-commit
-```
+{% endhighlight %}
 
 ## Further modification
 
@@ -99,13 +99,13 @@ If you went ahead and tested the deployment system, you'd find that the changes 
 
 First, install the Ubuntu `build-essential` package
 
-``` bash
+{% highlight bash linenos %}
 sudo apt-get install build-essential
-```
+{% endhighlight %}
 
 Next, put the following in `~/reload_uwsgi.c`
 
-``` c
+{% highlight c linenos %}
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -116,57 +116,57 @@ int main() {
     system("/sbin/initctl reload uwsgi");
     return 0;
 }
-```
+{% endhighlight %}
 
 Now to compile, install and configure the binary
 
-``` bash
+{% highlight bash linenos %}
 cd ~
 sudo gcc reload_uwsgi.c -o /usr/local/bin/reload_uwsgi
 rm reload_uwsgi.c
 sudo chown root:root /usr/local/bin/reload_uwsgi
 sudo chmod 4755 /usr/local/bin/reload_uwsgi
-```
+{% endhighlight %}
 
 And lastly add this executable to our git hooks, which should look like the following
 
 `/srv/git/helloworld.git/hooks/post-update:`
 
-``` bash
+{% highlight bash linenos %}
 #!/bin/sh
 echo
 echo "Pulling changes into deployment repository"
 echo
 git --git-dir /srv/www/helloworld/.git --work-tree /srv/www/helloworld pull hub master
 /usr/local/bin/reload_uwsgi
-```
+{% endhighlight %}
 
 `/srv/www/helloworld/.git/hooks/post-commit:`
 
-``` bash
+{% highlight bash linenos %}
 #!/bin/sh
 echo
 echo "Pushing changes to hub"
 echo
 git push hub
 /usr/local/bin/reload_uwsgi
-```
+{% endhighlight %}
 
 ## Testing it out
 
 Clone the repository on your local machine
 
-``` bash
+{% highlight bash linenos %}
 git clone user@server:/srv/git/helloworld.git
-```
+{% endhighlight %}
 
 Make some changes, commit them to master, and push them to the server
 
-``` bash
+{% highlight bash linenos %}
 vim application.py
 git commit -am 'Made some changes!'
 git push origin master
-```
+{% endhighlight %}
 
 and voila! The change should be reflected on the website.
 

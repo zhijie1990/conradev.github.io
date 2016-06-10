@@ -12,7 +12,7 @@ Interestingly enough, Apple has adopted 2D barcodes (including QR codes) in its 
 
 In order to integrate QR code scanning functionality into the camera, I first needed to understand how the camera works. I did this by reverse engineering Apple’s software. I discussed popular tools that I use to reverse engineer software in my previous [blog post](http://kramerapps.com/blog/post/38090565883/integrate-cloud-print-ios). The framework that controls basic camera interactions on iOS is the private framework PhotoLibrary. The framework includes the view controllers that display the Camera Roll and also the controller that is responsible for taking photos, `PLCameraController`. These controllers are not only used in the Camera application, but are also used to back the public `UIImagePickerController` class. The PhotoLibrary framework is based on the public AVFoundation framework. Here is the interface for `PLCameraController`, abridged to only show the parts we care about:
 
-``` objc
+{% highlight objc linenos %}
 @interface PLCameraController : NSObject {
     AVCaptureDeviceInput *_avCaptureInputFront;
     AVCaptureDeviceInput *_avCaptureInputBack;
@@ -30,7 +30,7 @@ In order to integrate QR code scanning functionality into the camera, I first ne
 @property (readonly, strong, nonatomic) AVCaptureVideoPreviewLayer *previewLayer;
 
 @end
-```
+{% endhighlight %}
 
 As you can see, the basic structure of the camera controller is an `AVCaptureSession` with a number of inputs and outputs. The microphone, front and back cameras function as inputs, and there are outputs for taking photos, videos, and panorama shots. When I first looked into the PhotoLibrary framework before iOS 6 was released, these observations led me to [discover](http://www.wired.com/gadgetlab/2011/11/enable-secret-panorama-feature-in-ios5/) the then unreleased Panorama mode.
 

@@ -12,22 +12,22 @@ Beginning with iOS 4.2, Apple introduced AirPrint as a method to print over the 
 
 The first step to integrate Google Cloud Print into iOS was to implement a client. Google documents the [Cloud Print API](https://developers.google.com/cloud-print/docs/appInterfaces) on their website, so the only thing that I needed to do was write a client for it. There are *many* ways to approach this, but I wanted to try something I have not tried before. I decided to delve into Core Data with Mattt Thompson’s [AFIncrementalStore](https://github.com/AFNetworking/AFIncrementalStore). AFIncrementalStore is a relatively new project, with the ambitious goal of mapping Core Data to a RESTful web service. I created a data model with ``Job`` and ``Printer`` entities, and implemented an ``AFRESTClient`` subclass to interact with the API. AFIncrementalStore is intended to be transparent, so I need only execute standard Core Data calls to use it. To fetch a list of all printers in alphabetical order, I can execute a standard ``NSFetchRequest``:
 
-``` objc
+{% highlight objc linenos %}
 NSFetchRequest *fetchRequest = [NSFetchRequest fetchRequestWithEntityName:@"Printer"];
 fetchRequest.sortDescriptors = @[ [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES] ];
 NSArray *printers = [context executeFetchRequest:request error:nil];
-```
+{% endhighlight %}
 
 To send a job to a given printer, I can insert a new Job entity into the context, and a request will be fired off in the background, transparently. Here is an example of sending a job to a printer:
     
-``` objc
+{% highlight objc linenos %}
 CPJob *job = [NSEntityDescription insertNewObjectForEntityForName:@"Job" inManagedObjectContext:context];
 job.title = @"TestJob";
 job.printer = printer;
 job.fileData = [NSData dataWithContentsOfFile:filePath];
 job.contentType = @"application/pdf”;
 [context save:nil];
-```
+{% endhighlight %}
 
 It is pretty cool to not have to interact with the network layer to use a RESTful API. For my purposes, I have found this approach to be great, but Core Data is not for everything or everyone. It is general knowledge among iPhone developers that Core Data is difficult to get right, and that when things do go wrong, they go *horribly* wrong. In this project, there are relatively few objects in the store, and the relationships between them are simple. I have yet to come across a serious problem *(knocks on wood)*.
 
@@ -39,25 +39,25 @@ In order to integrate Google Cloud Print into iOS, it was integral to understand
 
 From analyzing PrintKit, I determined a few useful pieces of information. PrintKit has two components, the framework itself and its associated daemon. The first component, the framework, is relatively small with only six classes. Each class is a wrapper over a portion of the [CUPS API](http://www.cups.org/documentation.php/doc-1.5/api-cups.html), which is compiled into the framework. You can see this for yourself by looking at the symbols in the framework (you must run this on OS X with the iOS SDK installed in order for it to work):
 
-``` console
+{% highlight console linenos %}
 $ nm $(xcode-select --print-path)/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.0.sdk/System/Library/PrivateFrameworks/PrintKit.framework/PrintKit | grep -c cups 
 328
-```
+{% endhighlight %}
 
 The second component, the daemon, is known as ``printd``. It is configured with ``launchd`` to listen over a UNIX socket. ``printd`` is actually a modified version of the CUPS daemon. This can be seen from its usage page (you must run this on a jailbroken iPhone in order for it to work):
 
-``` console
+{% highlight console linenos %}
 # /System/Library/PrivateFrameworks/PrintKit.framework/printd -h
 CUPS v1.5.0
 Copyright 2008-2010 by Apple Inc.  All rights reserved.
 ...
-```
+{% endhighlight %}
 
 The framework and daemon communicate over the UNIX socket the same way they would normally be communicating over port 631. The daemon is started on demand, meaning it is only running when it needs to be.
 
 However, in integrating Google Cloud Print, the daemon is of little importance. The proper layer to inject into and modify is the Objective-C layer, the six classes that serve as the API to the framework. Of these six, three are of particular interest: ``PKPrinterBrowser``, ``PKPrinter`` and ``PKJob``. The first, ``PKPrinterBrowser``, functions as its name suggests. It browses for printers using Bonjour. Here is the header for ``PKPrinterBrowser``, abridged to only show the parts we might care about:
 
-``` objc
+{% highlight objc linenos %}
 @protocol PKPrinterBrowserDelegate
 -(void)addPrinter:(PKPrinter *)printer moreComing:(BOOL)coming;
 -(void)removePrinter:(PKPrinter *)printer moreGoing:(BOOL)going;
@@ -71,7 +71,7 @@ However, in integrating Google Cloud Print, the daemon is of little importance. 
 - (id)initWithDelegate:(id<PKPrinterBrowserDelegate>)delegate;
 
 @end
-```
+{% endhighlight %}
 
 Each browser has a ``printers`` property, which contains the printers, and a ``delegate`` property, which wants to be notified of any changes. A browser object is created when you browse for nearby printers in the AirPrint dialog. The remaining two classes, ``PKPrinter`` and ``PKJob`` are model objects describing printers and jobs, respectively. Additionally, ``PKPrinter`` has methods for submitting jobs.
 
@@ -83,7 +83,7 @@ For those unfamiliar with jailbreaking, the piece of software that enables one t
 
 As I mentioned earlier, the Objective-C layer of PrintKit is the best place to make modifications. It is low enough of a level where I would not need to modify any interface code, but high enough of a level so as to avoid the CUPS API. One of the goals is to display Google Cloud Print printers to the user. To do this, I can insert custom printer objects into PrintKit that represent printers in Google Cloud Print. ``PKPrinter`` objects are normally created by ``PKPrinterBrowser``, so this seems like the logical place to insert them. Other objects see which printers ``PKPrinterBrowser`` has found by checking its ``printers`` property. Thus, if I was to modify the getter of this property, other objects would see my modifications. The advantage of only modifying the getter is that the modifications do not interfere with the internal state of the object, as the instance variable containing the printers is not modified. Here is some code from the project doing just this:
 
-``` logos
+{% highlight objc linenos %}
 %hook PKPrinterBrowser
 
 - (NSMutableDictionary *)printers {
@@ -96,11 +96,11 @@ As I mentioned earlier, the Objective-C layer of PrintKit is the best place to m
 }
 
 %end
-```
+{% endhighlight %}
 
 Now, if you are familiar with Objective-C, you are probably wondering about some of the funky syntax above: ``%hook``, ``%orig()``, and ``%end``. The code above is written for something called Logos. Logos is a preprocessor, written in Perl, developed by [Dustin Howett](http://twitter.com/dhowett). What Logos does is it takes the code above, and translates it into Objective-C runtime calls to “hook” that method. It replaces the implementation of the method with a custom one, and makes the original implementation available with the ``%orig()`` macro. Here is the above example, ran through Logos, and made human readable:
 
-``` objc
+{% highlight objc linenos %}
 static NSMutableDictionary * (*originalImplementation)(PKPrinterBrowser*, SEL);
 static NSMutableDictionary *replacedImplementation(PKPrinterBrowser* self, SEL _cmd) {
     NSMutableDictionary *orig = originalImplementation(self, _cmd);
@@ -123,7 +123,7 @@ static __attribute__((constructor)) void initializeHooks() {
         }
     }
 }
-```
+{% endhighlight %}
 
 As you can see, the first example is orders of magnitude cleaner and easier to maintain than the second. This is why Logos is so incredibly useful for writing hooks. It makes writing hooks almost natural, and removes the need to muck around in the runtime manually and repetitively. This approach of directly replacing implementations is somewhat similar to method 'swizzling' that many Cocoa developers are familiar with. One of the key differences between swizzling and directly replacing the implementation is that swizzling involves adding a method to a class via a category. This can only be done when the target class is directly linkable, which is not always the case. Mike Ash [wrote](http://www.mikeash.com/pyblog/friday-qa-2010-01-29-method-replacement-for-fun-and-profit.html) a great article outlining both of these methods.
 
