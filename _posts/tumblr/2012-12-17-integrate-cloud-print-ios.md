@@ -25,7 +25,7 @@ CPJob *job = [NSEntityDescription insertNewObjectForEntityForName:@"Job" inManag
 job.title = @"TestJob";
 job.printer = printer;
 job.fileData = [NSData dataWithContentsOfFile:filePath];
-job.contentType = @"application/pdf”;
+job.contentType = @"application/pdf";
 [context save:nil];
 {% endhighlight %}
 
