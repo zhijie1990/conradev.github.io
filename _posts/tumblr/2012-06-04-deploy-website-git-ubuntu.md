@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Deploy a website using git in Ubuntu
+title: Deploy a Website Using Git in Ubuntu
 tags: 
 ---
 
